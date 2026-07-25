@@ -116,3 +116,72 @@ export interface PredictionsResponse {
   best_download_window: BestDownloadWindow | null;
   data_points: number;
 }
+
+export interface TrainingStatus {
+  is_training: boolean;
+  buffered_samples: number;
+  last_train_duration: number;
+  last_train_completed: string | null;
+  samples_needed: number;
+}
+
+export interface ScoreHistogram {
+  counts: number[];
+  edges: number[];
+  bin_count: number;
+}
+
+export interface FeatureImportance {
+  [feature: string]: number;
+}
+
+export interface FeatureStats {
+  [feature: string]: {
+    mean: number;
+    std: number;
+    min: number;
+    max: number;
+  };
+}
+
+export interface Percentiles {
+  p5: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p95: number;
+}
+
+export interface TrainingMetrics {
+  version: number;
+  trained_at: string;
+  sample_count: number;
+  feature_count: number;
+  contamination: number;
+  threshold: number;
+  active: boolean;
+  metrics: {
+    d_anomaly_count: number;
+    n_anomaly_count: number;
+    d_anomaly_rate: number;
+    n_anomaly_rate: number;
+    d_score_mean: number;
+    d_score_std: number;
+    d_score_min: number;
+    d_score_max: number;
+    n_score_mean: number;
+    n_score_std: number;
+    n_score_min: number;
+    n_score_max: number;
+    d_percentiles: Percentiles;
+    n_percentiles: Percentiles;
+    d_feature_importance: FeatureImportance;
+    n_feature_importance: FeatureImportance;
+    d_feature_stats: FeatureStats;
+    n_feature_stats: FeatureStats;
+    d_score_histogram: ScoreHistogram;
+    n_score_histogram: ScoreHistogram;
+    training_duration_seconds: number;
+    n_estimators: number;
+  };
+}

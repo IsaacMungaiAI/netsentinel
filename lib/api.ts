@@ -8,6 +8,8 @@ import type {
   LatencyPoint,
   SignalPoint,
   PredictionsResponse,
+  TrainingStatus,
+  TrainingMetrics,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -58,4 +60,6 @@ export const api = {
     apiFetch<PredictionsResponse>("/api/predictions"),
   models: () => apiFetch<ModelInfo[]>("/api/models"),
   retrain: () => apiFetch<{ ok: boolean; version?: number; samples?: number; message?: string }>("/api/models/retrain", { method: "POST" }),
+  trainingStatus: () => apiFetch<TrainingStatus>("/api/training/status"),
+  modelMetrics: (version: number) => apiFetch<TrainingMetrics>(`/api/models/${version}/metrics`),
 };
