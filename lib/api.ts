@@ -10,6 +10,10 @@ import type {
   PredictionsResponse,
   TrainingStatus,
   TrainingMetrics,
+  QoSDashboard,
+  QoSStatus,
+  QoSDeviceState,
+  ActivityLogEntry,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -62,4 +66,25 @@ export const api = {
   retrain: () => apiFetch<{ ok: boolean; version?: number; samples?: number; message?: string }>("/api/models/retrain", { method: "POST" }),
   trainingStatus: () => apiFetch<TrainingStatus>("/api/training/status"),
   modelMetrics: (version: number) => apiFetch<TrainingMetrics>(`/api/models/${version}/metrics`),
+  qosDashboard: () => apiFetch<QoSDashboard>("/api/qos/dashboard"),
+  qosStatus: () => apiFetch<QoSStatus>("/api/qos/status"),
+  qosDevices: () => apiFetch<QoSDeviceState[]>("/api/qos/devices"),
+  qosActivity: (hours = 1) =>
+    apiFetch<ActivityLogEntry[]>(`/api/qos/activity?hours=${hours}`),
+  setDevicePriority: (mac: string, priority: number) =>
+    apiFetch<{ ok: boolean }>(`/api/qos/devices/${encodeURIComponent(mac)}/priority`, {
+      method: "POST",
+      body: JSON.stringify({ priority }),
+    }),
+  setDeviceActivity: (mac: string, activity: string) =>
+    apiFetch<{ ok: boolean }>(`/api/qos/devices/${encodeURIComponent(mac)}/activity`, {
+      method: "POST",
+      body: JSON.stringify({ activity }),
+    }),
+  clearDeviceRule: (mac: string) =>
+    apiFetch<{ ok: boolean }>(`/api/qos/devices/${encodeURIComponent(mac)}/rule`, { method: "DELETE" }),
+  setAutoApply: (enabled: boolean) =>
+    apiFetch<{ ok: boolean; auto_apply: boolean }>(`/api/qos/auto-apply?enabled=${enabled}`, { method: "POST" }),
+  trainQoS: () =>
+    apiFetch<{ ok: boolean; pending_samples: number }>("/api/qos/train", { method: "POST" }),
 };
