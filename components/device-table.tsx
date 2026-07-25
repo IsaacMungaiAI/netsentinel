@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import {
   Table,
   TableBody,
@@ -54,10 +54,14 @@ export function DeviceTable({ devices }: { devices: DeviceRecord[] }) {
   const [upLimit, setUpLimit] = useState("")
   const [downLimit, setDownLimit] = useState("")
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null)
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  useEffect(() => () => clearTimeout(toastTimer.current), [])
 
   const showToast = useCallback((message: string, type: "success" | "error") => {
+    clearTimeout(toastTimer.current)
     setToast({ message, type })
-    setTimeout(() => setToast(null), 3000)
+    toastTimer.current = setTimeout(() => setToast(null), 3000)
   }, [])
 
   const handleBlock = async (mac: string) => {
@@ -69,8 +73,10 @@ export function DeviceTable({ devices }: { devices: DeviceRecord[] }) {
     } catch {
       showToast("Failed to block device", "error")
     }
-    setActionLoading(false)
-    setActionMac(null)
+    if (mac) {
+      setActionLoading(false)
+      setActionMac(null)
+    }
   }
 
   const handleUnblock = async (mac: string) => {
@@ -82,8 +88,10 @@ export function DeviceTable({ devices }: { devices: DeviceRecord[] }) {
     } catch {
       showToast("Failed to unblock device", "error")
     }
-    setActionLoading(false)
-    setActionMac(null)
+    if (mac) {
+      setActionLoading(false)
+      setActionMac(null)
+    }
   }
 
   const handleBandwidth = async () => {

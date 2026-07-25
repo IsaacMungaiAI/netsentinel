@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -14,20 +14,33 @@ export function SignalChart() {
 
   useEffect(() => {
     let active = true
+    const controller = new AbortController()
     async function load() {
       try {
-        const res = await api.signal(2)
+        const res = await api.signal(2, controller.signal)
         if (active) { setData(res); setLoading(false) }
-      } catch { if (active) setLoading(false) }
+      } catch {
+        if (active && !controller.signal.aborted) setLoading(false)
+      }
     }
     load()
     const interval = setInterval(load, 10000)
-    return () => { active = false; clearInterval(interval) }
+    return () => { active = false; clearInterval(interval); controller.abort() }
   }, [])
 
-  const maxRate = Math.max(...data.map(d => d.wifi_rate), 1)
-  const currentRate = data.length > 0 ? data[data.length - 1].wifi_rate : 0
-  const currentDevices = data.length > 0 ? data[data.length - 1].device_count : 0
+  const stats = useMemo(() => {
+    if (data.length === 0) return { maxRate: 1, currentRate: 0, currentDevices: 0 }
+    let maxRate = 0
+    for (const d of data) {
+      if (d.wifi_rate > maxRate) maxRate = d.wifi_rate
+    }
+    const last = data[data.length - 1]
+    return {
+      maxRate: Math.max(maxRate, 1),
+      currentRate: last.wifi_rate,
+      currentDevices: last.device_count,
+    }
+  }, [data])
 
   if (loading) {
     return <Card className="shadow-lg"><CardContent className="p-6"><Skeleton className="h-[200px] rounded-xl bg-white/5" /></CardContent></Card>
@@ -44,10 +57,10 @@ export function SignalChart() {
           <div className="flex gap-2">
             <Badge variant="outline" className="text-[10px] border-white/10 bg-white/5 flex items-center gap-1">
               <Wifi className="h-3 w-3" />
-              {currentRate} Mbps
+              {stats.currentRate} Mbps
             </Badge>
             <Badge variant="outline" className="text-[10px] border-white/10 bg-white/5">
-              {currentDevices} devices
+              {stats.currentDevices} devices
             </Badge>
           </div>
         </div>
@@ -55,13 +68,13 @@ export function SignalChart() {
       <CardContent>
         <div className="h-[200px] flex items-end gap-[2px] relative">
           <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-[9px] text-muted-foreground/40 pr-2 w-10">
-            <span>{maxRate}</span>
-            <span>{(maxRate / 2).toFixed(0)}</span>
+            <span>{stats.maxRate}</span>
+            <span>{(stats.maxRate / 2).toFixed(0)}</span>
             <span>0</span>
           </div>
           <div className="flex-1 ml-12 flex items-end gap-[2px] h-full">
             {data.slice(-200).map((d, i) => {
-              const h = Math.max(2, (d.wifi_rate / maxRate) * 100)
+              const h = Math.max(2, (d.wifi_rate / stats.maxRate) * 100)
               return (
                 <div
                   key={i}

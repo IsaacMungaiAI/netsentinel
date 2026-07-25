@@ -25,15 +25,17 @@ export default function ModelsPage() {
   const [metricsLoading, setMetricsLoading] = useState<number | null>(null)
 
   useEffect(() => {
-    api.models().then(setModels).finally(() => setLoading(false))
-    api.trainingStatus().then(setTrainingStatus).catch(() => {})
+    let active = true
+    Promise.all([api.models(), api.trainingStatus()]).then(([m, t]) => {
+      if (active) { setModels(m); setTrainingStatus(t) }
+    }).finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
   }, [])
 
   useEffect(() => {
-    if (!trainingStatus?.is_training) return
     const interval = setInterval(() => {
       api.trainingStatus().then(setTrainingStatus).catch(() => {})
-    }, 2000)
+    }, trainingStatus?.is_training ? 2000 : 10000)
     return () => clearInterval(interval)
   }, [trainingStatus?.is_training])
 

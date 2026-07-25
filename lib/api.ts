@@ -56,12 +56,12 @@ export const api = {
     apiFetch<{ timestamp: string; device_count: number; total_up: number; total_down: number; wifi_rate: number }[]>(
       `/api/traffic?hours=${hours}`
     ),
-  latency: (hours = 1) =>
-    apiFetch<LatencyPoint[]>(`/api/latency?hours=${hours}`),
-  signal: (hours = 1) =>
-    apiFetch<SignalPoint[]>(`/api/signal?hours=${hours}`),
-  predictions: () =>
-    apiFetch<PredictionsResponse>("/api/predictions"),
+  latency: (hours = 1, signal?: AbortSignal) =>
+    apiFetch<LatencyPoint[]>(`/api/latency?hours=${hours}`, { signal }),
+  signal: (hours = 1, signal?: AbortSignal) =>
+    apiFetch<SignalPoint[]>(`/api/signal?hours=${hours}`, { signal }),
+  predictions: (signal?: AbortSignal) =>
+    apiFetch<PredictionsResponse>("/api/predictions", { signal }),
   models: () => apiFetch<ModelInfo[]>("/api/models"),
   retrain: () => apiFetch<{ ok: boolean; version?: number; samples?: number; message?: string }>("/api/models/retrain", { method: "POST" }),
   trainingStatus: () => apiFetch<TrainingStatus>("/api/training/status"),
