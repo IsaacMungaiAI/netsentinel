@@ -185,3 +185,38 @@ export interface TrainingMetrics {
     n_estimators: number;
   };
 }
+
+export type ActivityType = "idle" | "gaming" | "streaming" | "downloading" | "video_call" | "browsing";
+
+export interface QoSStatus {
+  trained: boolean;
+  pending_samples: number;
+  training_min: number;
+  device_count: number;
+  activity_summary: Record<string, number>;
+  auto_apply: boolean;
+}
+
+export interface QoSDeviceState {
+  mac: string;
+  activity: ActivityType;
+  confidence: number;
+  priority: number;
+  user_override: boolean;
+  recommended_up: number;
+  recommended_down: number;
+}
+
+export interface QoSDashboard {
+  status: QoSStatus;
+  devices: QoSDeviceState[];
+  active_rules: Record<string, { priority?: number; activity_label?: string }>;
+}
+
+export interface ActivityLogEntry {
+  timestamp: string;
+  device_mac: string;
+  activity: ActivityType;
+  confidence: number;
+  count: number;
+}

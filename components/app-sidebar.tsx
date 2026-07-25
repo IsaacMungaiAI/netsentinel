@@ -20,6 +20,7 @@ import {
   ShieldAlert,
   Activity,
   BrainCircuit,
+  Zap,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -29,6 +30,7 @@ const items = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Devices", url: "/devices", icon: Monitor },
   { title: "Alerts", url: "/alerts", icon: ShieldAlert },
+  { title: "QoS", url: "/qos", icon: Zap },
   { title: "ML Models", url: "/models", icon: BrainCircuit },
 ]
 
