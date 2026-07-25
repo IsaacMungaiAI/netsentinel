@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { api } from "@/lib/api"
 import type { DashboardSummary } from "@/lib/types"
 import { StatsCards } from "@/components/stats-cards"
@@ -16,16 +16,20 @@ import { Shield } from "lucide-react"
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardSummary | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const dataHash = useRef("")
 
   useEffect(() => {
     let active = true
     async function load() {
       try {
         const res = await api.dashboard()
-        if (active) {
+        if (!active) return
+        const hash = JSON.stringify(res)
+        if (hash !== dataHash.current) {
+          dataHash.current = hash
           setData(res)
-          setError(null)
         }
+        setError(null)
       } catch {
         if (active) setError("Cannot reach backend. Make sure the Python server is running on :8000")
       }

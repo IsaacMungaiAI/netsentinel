@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef, useMemo } from "react"
 import { api } from "@/lib/api"
 import type { QoSDashboard, ActivityType, DeviceRecord } from "@/lib/types"
 import {
@@ -50,60 +50,67 @@ export default function QoSPage() {
   const [loading, setLoading] = useState(true)
   const [expandedMac, setExpandedMac] = useState<string | null>(null)
   const [training, setTraining] = useState(false)
+  const activeRef = useRef(true)
 
   useEffect(() => {
-    loadData()
+    activeRef.current = true
+    async function load() {
+      try {
+        const [dash, devs] = await Promise.all([api.qosDashboard(), api.devices()])
+        if (!activeRef.current) return
+        setData(dash)
+        setDevices(devs)
+      } catch {
+        // backend may not be reachable
+      }
+      setLoading(false)
+    }
+    load()
+    const interval = setInterval(load, 5000)
+    return () => { activeRef.current = false; clearInterval(interval) }
   }, [])
 
-  const isLoaded = data !== null
-
-  useEffect(() => {
-    if (!isLoaded) return
-    const interval = setInterval(loadData, 5000)
-    return () => clearInterval(interval)
-  }, [isLoaded])
-
-  async function loadData() {
+  async function refresh() {
     try {
       const [dash, devs] = await Promise.all([api.qosDashboard(), api.devices()])
       setData(dash)
       setDevices(devs)
-    } catch {
-      // backend may not be reachable
-    }
-    setLoading(false)
+    } catch {}
   }
 
   async function handleTrain() {
     setTraining(true)
     try {
       await api.trainQoS()
-      await loadData()
+      await refresh()
     } catch {}
     setTraining(false)
   }
 
   async function handleSetPriority(mac: string, priority: number) {
     await api.setDevicePriority(mac, priority)
-    await loadData()
+    await refresh()
   }
 
   async function handleClearRule(mac: string) {
     await api.clearDeviceRule(mac)
-    await loadData()
+    await refresh()
   }
 
   async function handleToggleAutoApply(enabled: boolean) {
     await api.setAutoApply(enabled)
-    await loadData()
+    await refresh()
   }
 
-  const activityCounts: Record<string, number> = {}
-  data?.devices.forEach((d) => {
-    activityCounts[d.activity] = (activityCounts[d.activity] || 0) + 1
-  })
+  const activityCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    data?.devices.forEach((d) => {
+      counts[d.activity] = (counts[d.activity] || 0) + 1
+    })
+    return counts
+  }, [data?.devices])
 
-  const deviceMap = new Map(devices.map((d) => [d.mac, d]))
+  const deviceMap = useMemo(() => new Map(devices.map((d) => [d.mac, d])), [devices])
 
   return (
     <div className="space-y-6">
@@ -228,7 +235,7 @@ export default function QoSPage() {
                 </CardContent>
               </Card>
             ) : (
-              data.devices
+              [...data.devices]
                 .sort((a, b) => a.priority - b.priority)
                 .map((dev) => {
                   const actCfg = ACTIVITY_CONFIG[dev.activity]

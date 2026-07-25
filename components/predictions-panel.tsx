@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -14,16 +14,24 @@ export function PredictionsPanel() {
 
   useEffect(() => {
     let active = true
+    const controller = new AbortController()
     async function load() {
       try {
-        const res = await api.predictions()
+        const res = await api.predictions(controller.signal)
         if (active) { setData(res); setLoading(false) }
-      } catch { if (active) setLoading(false) }
+      } catch {
+        if (active && !controller.signal.aborted) setLoading(false)
+      }
     }
     load()
     const interval = setInterval(load, 60000)
-    return () => { active = false; clearInterval(interval) }
+    return () => { active = false; clearInterval(interval); controller.abort() }
   }, [])
+
+  const maxDl = useMemo(() => {
+    if (!data) return 1
+    return Math.max(...data.hourly_forecast.map((f) => f.avg_download), 1)
+  }, [data])
 
   if (loading) {
     return <Card className="shadow-lg"><CardContent className="p-6"><Skeleton className="h-[250px] rounded-xl bg-white/5" /></CardContent></Card>
@@ -90,7 +98,6 @@ export function PredictionsPanel() {
           <p className="text-[10px] text-muted-foreground/60 uppercase tracking-widest">24h Congestion Forecast</p>
           <div className="flex gap-[2px] h-10 items-end">
             {data.hourly_forecast.map((h) => {
-              const maxDl = Math.max(...data.hourly_forecast.map(f => f.avg_download), 1)
               const barH = Math.max(4, (h.avg_download / maxDl) * 100)
               const now = new Date().getHours()
               return (

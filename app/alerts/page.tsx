@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { api } from "@/lib/api"
 import type { AlertRecord } from "@/lib/types"
 import { AlertFeed } from "@/components/alert-feed"
@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export default function AlertsPage() {
   const [alerts, setAlerts] = useState<AlertRecord[] | null>(null)
   const [filter, setFilter] = useState("all")
+  const dataHash = useRef("")
 
   useEffect(() => {
     let active = true
@@ -20,7 +21,12 @@ export default function AlertsPage() {
         if (filter === "critical") params.severity = "critical"
         if (filter === "warning") params.severity = "warning"
         const res = await api.alerts(params)
-        if (active) setAlerts(res)
+        if (!active) return
+        const hash = JSON.stringify(res)
+        if (hash !== dataHash.current) {
+          dataHash.current = hash
+          setAlerts(res)
+        }
       } catch {
         // silent
       }

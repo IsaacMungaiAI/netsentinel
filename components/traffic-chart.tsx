@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import {
   Card,
   CardContent,
@@ -24,12 +25,16 @@ function formatTime(ts: string) {
 }
 
 export function TrafficChart({ data }: { data: NetworkStatsRow[] }) {
-  const chartData = data.map((d) => ({
-    time: formatTime(d.timestamp),
-    "Download": d.total_down,
-    "Upload": d.total_up,
-    devices: d.device_count,
-  }))
+  const chartData = useMemo(
+    () =>
+      data.map((d) => ({
+        time: formatTime(d.timestamp),
+        "Download": d.total_down,
+        "Upload": d.total_up,
+        devices: d.device_count,
+      })),
+    [data]
+  )
 
   return (
     <Card className="shadow-lg">
